@@ -1,0 +1,141 @@
+1.什么是动态代理?
+
+答：动态代理可以提供对另一个对象的访问，同时隐藏实际对象的具体事实。代理一般会实现它所表示的实际对象的接口。代理可以访问实际对象，但是延迟实现实际对象的部分功能，实际对象实现系统的实际功能，代理对象对客户隐藏了实际对象。客户不知道它是与代理打交道还是与实际对象打交道。
+2.为什么使用动态代理?
+
+答：因为动态代理可以对请求进行任何处理
+
+3.使用它有哪些好处?
+
+答：因为动态代理可以对请求进行任何处理
+4.哪些地方需要动态代理?
+
+答：不允许直接访问某些类；对访问要做特殊处理等
+
+ 
+
+目前Java开发包中包含了对动态代理的支持，但是其实现只支持对接口的的实现。 其实现主要通过java.lang.reflect.Proxy类和java.lang.reflect.InvocationHandler接口。 
+
+Proxy类主要用来获取动态代理对象，InvocationHandler接口用来约束调用者实现
+
+以下为模拟案例，通过动态代理实现在方法调用前后向控制台输出两句字符串
+
+目录结构
+
+
+
+<br/>
+
+定义一个HelloWorld接口
+
+复制代码
+ 1 package com.ljq.test;
+ 2 
+ 3  /**
+ 4  * 定义一个HelloWorld接口
+ 5  * 
+ 6  * @author jiqinlin
+ 7  *
+ 8  */
+ 9  public interface HelloWorld {
+10     public void sayHelloWorld();
+11 }
+复制代码
+<br/>
+
+类HelloWorldImpl是HelloWorld接口的实现
+
+复制代码
+ 1 package com.ljq.test;
+ 2 
+ 3  /**
+ 4  * 类HelloWorldImpl是HelloWorld接口的实现
+ 5  * 
+ 6  * @author jiqinlin
+ 7  *
+ 8  */
+ 9  public class HelloWorldImpl implements HelloWorld{
+10 
+11     public void sayHelloWorld() {
+12         System.out.println("HelloWorld!");
+13     }
+14 
+15 }
+复制代码
+HelloWorldHandler是 InvocationHandler接口实现
+
+复制代码
+ 1 package com.ljq.test;
+ 2 
+ 3  import java.lang.reflect.InvocationHandler;
+ 4  import java.lang.reflect.Method;
+ 5 
+ 6  /**
+ 7  * 实现在方法调用前后向控制台输出两句字符串
+ 8  * 
+ 9  * @author jiqinlin
+10  *
+11  */
+12  public class HelloWorldHandler implements InvocationHandler{
+13     //要代理的原始对象
+14      private Object obj;
+15     
+16     public HelloWorldHandler(Object obj) {
+17         super();
+18         this.obj = obj;
+19     }
+20 
+21     /**
+22      * 在代理实例上处理方法调用并返回结果
+23      * 
+24      * @param proxy 代理类
+25      * @param method 被代理的方法
+26      * @param args 该方法的参数数组
+27      */
+28     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+29         Object result = null;
+30         //调用之前
+31          doBefore();
+32         //调用原始对象的方法
+33         result=method.invoke(obj, args);
+34         //调用之后
+35         doAfter();
+36         return result;
+37     }
+38     
+39     private void doBefore(){
+40         System.out.println("before method invoke");
+41     }
+42     
+43     private void doAfter(){
+44         System.out.println("after method invoke");
+45     }
+46     
+47 }
+复制代码
+测试类
+
+复制代码
+package com.ljq.test;
+
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Proxy;
+
+
+public class HelloWorldTest {
+
+    public static void main(String[] args) {
+        HelloWorld helloWorld=new HelloWorldImpl();
+        InvocationHandler handler=new HelloWorldHandler(helloWorld);
+        
+        //创建动态代理对象
+        HelloWorld proxy=(HelloWorld)Proxy.newProxyInstance(
+                helloWorld.getClass().getClassLoader(), 
+                helloWorld.getClass().getInterfaces(), 
+                handler);
+        proxy.sayHelloWorld();
+    }
+}
+复制代码
+运行结果为：
+
